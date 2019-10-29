@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppLoading } from "expo";
 import * as Font from "expo-font";
 import { Asset } from "expo-asset";
-import { Text, View, AsyncStorage } from 'react-native';
+import { AsyncStorage } from 'react-native';
 import { InMemoryCache } from 'apollo-cache-inmemory';
 import { persistCache } from 'apollo-cache-persist';
 import ApolloClient from "apollo-boost";
@@ -11,17 +11,19 @@ import { ThemeProvider } from "styled-components";
 import { ApolloProvider } from "react-apollo-hooks";
 import apolloClientOptions from './apollo';
 import styles from './styles';
+import NaviController from './components/NaviController';
+import { AuthProvider } from './AuthContext';
 
 export default function App() {
   const [loaded, setLoaded] = useState(false);
   const [client, setClient] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] =useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(null);
   const preLoad = async() => {
     try {
       await Font.loadAsync({
         ...Ionicons.font
       });
-      await Asset.loadAsync([require("./assets/logo.png")]);
+      await Asset.loadAsync([require("./assets/images/logo.png")]);
       const cache = new InMemoryCache();
       await persistCache({
         cache,
@@ -32,7 +34,7 @@ export default function App() {
         ...apolloClientOptions
       });
       const isLoggedIn = await AsyncStorage.getItem("isLoggedIn");
-      if(isLoggedIn === null || isLoggedIn === false) {
+      if(!isLoggedIn || isLoggedIn === "false") {
         setIsLoggedIn(false);
       } else {
         setIsLoggedIn(true);
@@ -46,12 +48,13 @@ export default function App() {
   useEffect(() => {
     preLoad();
   }, []);
-  return loaded && client && isLoggedIn !== null ? (
+
+  return loaded && client && isLoggedIn != null ? (
     <ApolloProvider client={client}>
       <ThemeProvider theme={styles}>
-        <View>
-          {isLoggedIn ? <Text>I'm in</Text> : <Text>I'm out</Text>}
-        </View>
+        <AuthProvider isLoggedIn={isLoggedIn}>
+          <NaviController />
+        </AuthProvider>
       </ThemeProvider>
     </ApolloProvider>
   ) : (
