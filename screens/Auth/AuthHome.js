@@ -12,7 +12,6 @@ const View = styled.View`
 
 const Image = styled.Image`
   width: ${constants.width / 2.5};
-  margin-bottom: 0px;
 `;
 
 const Touchable = styled.TouchableOpacity``;
