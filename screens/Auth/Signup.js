@@ -7,6 +7,7 @@ import * as Facebook from 'expo-facebook';
 import AuthButton from "../../components/AuthButton";
 import AuthInput from "../../components/AuthInput";
 import useInput from "../../hooks/useInput";
+import * as Google from "expo-google-app-auth";
 
 const View = styled.View`
     justify-content: center;
@@ -84,19 +85,51 @@ export default ({ navigation }) => {
       if (type === 'success') {
         const response = await fetch(`https://graph.facebook.com/me?access_token=${token}&fields=id,last_name,first_name,email`);
         const { email, first_name, last_name } = await response.json();
-        emailInput.setValue(email);
-        fNameInput.setValue(first_name);
-        lNameInput.setValue(last_name);
+        updateFormData(email, first_name, last_name);
         setLoading(false);
-        const [username] = email.split("@");
-        userNameInput.setValue(username);
-      } else {
-        // type === 'cancel'
       }
     } catch ({ message }) {
       alert(`Facebook Login Error: ${message}`);
+    } finally {
+      setLoading(false);
     }
   };
+  const googleLogin = async() => {
+    try {
+      setLoading(true);
+      const GOOGLE_ID = "336033848567-q9bff4os41it7ra8thq4ufavbn917joj.apps.googleusercontent.com";
+      const ANDROID_ID = "336033848567-0lv0g1quncip681ggvrl506l2unnnof1.apps.googleusercontent.com";
+      const result = await Google.logInAsync({
+        androidClientId: ANDROID_ID,
+        iosClientId: GOOGLE_ID,
+        scopes: ['profile', 'email'],
+      });
+      if (result.type === 'success') {
+        const user = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+          headers: { Authorization: `Bearer ${result.accessToken}` },
+        })
+        const { email, family_name, given_name } = await user.json();
+        updateFormData(email, family_name, given_name);
+      } else {
+        console.log(1);
+        return { cancelled: true };
+      }
+    } catch (e) {
+      console.log(e);
+      return { error: true };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateFormData = (email, firstName, lastName) => {
+    emailInput.setValue(email);
+    fNameInput.setValue(firstName);
+    lNameInput.setValue(lastName);
+    const [username] = email.split("@");
+    userNameInput.setValue(username);
+  };
+
   return (
     <>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -131,6 +164,12 @@ export default ({ navigation }) => {
               loading={false}
               onPress={fbLogin}
               text="Facebook으로 로그인"
+            />
+            <AuthButton
+              bgColor={"#EE1922"}
+              loading={false}
+              onPress={googleLogin}
+              text="Google로 로그인"
             />
           </FBContainer>
         </View>
