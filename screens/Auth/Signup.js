@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { Alert, TouchableWithoutFeedback, Keyboard } from "react-native";
-import { LOG_IN, CREATE_ACCOUNT } from "./AuthQueries";
+import { CREATE_ACCOUNT } from "./AuthQueries";
 import { useMutation } from "react-apollo-hooks";
 import * as Facebook from 'expo-facebook';
 import AuthButton from "../../components/AuthButton";
