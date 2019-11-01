@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ScrollView, RefreshControl } from "react-native";
 import styled from "styled-components";
 import Loader from "../../components/Loader";
+import Post from "../../components/Post";
 import { gql } from "apollo-boost";
 import { useQuery } from "react-apollo-hooks";
 
@@ -16,6 +17,7 @@ const FEED_QUERY = gql`{
       username
     }
     files {
+      id
       url
     }
     likeCount
@@ -38,8 +40,6 @@ const View = styled.View`
     flex: 1;
 `;
 
-const Text = styled.Text``;
-
 export default () => {
   const [ refreshing, setRefreshing] = useState(false);
   const { loading, data, refetch } = useQuery(FEED_QUERY);
@@ -53,5 +53,19 @@ export default () => {
       setRefreshing(false);
     }
   };
-  return <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>{ loading ? <Loader /> : <Text>Hello</Text> }</ScrollView>
+  return (
+    <ScrollView
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={refresh} />
+      }
+    >
+      {loading ? (
+        <Loader />
+      ) : (
+        data &&
+        data.seeFeed &&
+        data.seeFeed.map(post => <Post key={post.id} {...post} />)
+      )}
+    </ScrollView>
+  );
 };
