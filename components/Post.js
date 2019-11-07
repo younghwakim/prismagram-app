@@ -1,21 +1,23 @@
-import React from "react";
-import { Image, FlatList } from "react-native";
-import { ListItem } from "react-native-elements";
+import React, { useState } from "react";
+import { Image } from "react-native";
 import styled from "styled-components";
 import { Ionicons } from "@expo/vector-icons";
 import PropTypes from "prop-types";
 import Swiper from "react-native-swiper";
+import { gql } from "apollo-boost";
 import constants from "../constants";
 import { Platform } from "@unimodules/core";
+import styles from "../styles";
+import { useMutation } from "react-apollo-hooks";
 
-const ViewContainer = styled.View`
-  flex: 1;
-  justify-content: center;
+const TOGGLE_LIKE = gql`
+  mutation toggleLike($postId: String!){
+      toggleLike(postId: $postId)
+  }
 `;
 
 const Container = styled.View`
-    margin-bottom: 40px;
-    width: 100%;
+  margin-bottom: 40px;
 `;
 const Header = styled.View`
     padding: 15px;
@@ -33,8 +35,6 @@ const Bold = styled.Text`
 const Location = styled.Text`
     font-size: 12px;
 `;
-
-const SwiperContainer = styled.View``;
 
 const IconsContainer = styled.View`
   flex-direction: row;
@@ -58,94 +58,116 @@ const CommentCount = styled.Text`
   font-size: 13px;
 `;
 
-const Post = (seeFeed) => {
+const Post = ({ item: { id, user, location, files = [], likeCount: likeCountProp, caption, comments = [], isLiked: isLikedProp }}) => {
+  const [ isLiked, setIsLiked ] = useState(isLikedProp);
+  const [ likeCount, setLikeCount ] = useState(likeCountProp);
+  const [toggleLikeMutation] = useMutation(TOGGLE_LIKE, {
+    variables: {
+      postId: id
+    }
+  });
+  const handleLike = async() => {
+    if(isLiked) {
+      setLikeCount(l => l-1);
+    } else {
+      setLikeCount(l => l+1);
+    }
+    setIsLiked(p => !p);
+    try {
+      await toggleLikeMutation();
+    } catch(e) {
+      
+    }
+  };
   return (
-    <ViewContainer key={seeFeed.id}>
-      <FlatList keyExtractor={(item) => item.id} data={seeFeed.data} renderItem={({ item: { id, user, location, files = [], likeCount, caption, comments = [] } }) => (
-        <Container>
+    <Container>
+      <Header>
+        <Touchable>
+          <Image style={{ width: 40, height: 40, borderRadius: 20 }} source={{ uri: user.avatar }} />
+        </Touchable>
+        <Touchable>
+          <HeaderUserContainer>
+            <Bold>{user.username}</Bold>
+            <Location>{location}</Location>
+          </HeaderUserContainer>
+        </Touchable>
+      </Header>
 
-          <Header>
-            <Touchable>
-              <Image style={{ width: 40, height: 40, borderRadius: 20 }} source={{ uri: user.avatar }} />
-            </Touchable>
-            <Touchable>
-              <HeaderUserContainer>
-                <Bold>{user.username}</Bold>
-                <Location>{location}</Location>
-              </HeaderUserContainer>
-            </Touchable>
-          </Header>
+      <Swiper showsPagination={false} loop={false} style={{ width: constants.width, height: constants.height / 2.5 }} dotStyle={{ width: 4, height: 4 }} activeDotStyle={{ width: 4, height: 4 }} >
+        {files.map(file => (
+          <Image key={file.id} source={{ uri: file.url }} style={{ width: constants.width,  height: constants.height / 2.5 }} />
+        ))}
+      </Swiper>
+      <InfoContainer>
+        <IconsContainer>
+          <Touchable onPress={handleLike}>
+            <IconContainer>
+              <Ionicons
+                color={isLiked ? styles.redColor : styles.blackColor}
+                size={28}
+                name={
+                  Platform.OS === "ios" ?
+                    isLiked ? "ios-heart" : "ios-heart-empty"
+                  : isLiked ? "md-heart" : "md-heart-empty" }
+              />
+            </IconContainer>
+          </Touchable>
 
-          <SwiperContainer>
-            <Swiper showsPagination={false} loop={false} style={{ width: constants.width, height: constants.height / 2.5 }} dotStyle={{ width: 4, height: 4 }} activeDotStyle={{ width: 4, height: 4 }} >
-              {files.map(file => (
-                <Image key={file.id} source={{ uri: file.url }} style={{ width: constants.width,  height: constants.height / 2.5 }} />
-              ))}
-            </Swiper>
-          </SwiperContainer>
-          <InfoContainer>
-            <IconsContainer>
-              <Touchable>
-                <IconContainer>
-                  <Ionicons size={28} name={ Platform.OS === "ios" ? "ios-heart-empty" : "md-heart-empty" } />
-                </IconContainer>
-              </Touchable>
+          <Touchable>
+            <IconContainer>
+              <Ionicons
+                color={styles.blackColor}
+                size={28}
+                name={ Platform.OS === "ios" ? "ios-text" : "md-text" }
+              />
+            </IconContainer>
+          </Touchable>
+        </IconsContainer>
 
-              <Touchable>
-                <IconContainer>
-                  <Ionicons size={28} name={ Platform.OS === "ios" ? "ios-text" : "md-text" } />
-                </IconContainer>
-              </Touchable>
-            </IconsContainer>
-
-            <Touchable>
-              <Bold>{likeCount === 1 ? "1 like" : `${likeCount} likes`}</Bold>
-            </Touchable>
-            
-            <Caption>
-              <Bold>{user.username}</Bold> {caption}
-            </Caption>
-            
-            <Touchable>
-              <CommentCount>See all {comments.length} comments</CommentCount>
-            </Touchable>
-          </InfoContainer>
-        </Container>
-      )} />
-    </ViewContainer>
+        <Touchable>
+          <Bold>{likeCount === 1 ? "1 like" : `${likeCount} likes`}</Bold>
+        </Touchable>
+        
+        <Caption>
+          <Bold>{user.username}</Bold> {caption}
+        </Caption>
+        
+        <Touchable>
+          <CommentCount>See all {comments.length} comments</CommentCount>
+        </Touchable>
+      </InfoContainer>
+    </Container>
   );
 };
 
-Post.propTypes = PropTypes.arrayOf(
-  PropTypes.shape({
+Post.propTypes = PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  user: PropTypes.shape({
     id: PropTypes.string.isRequired,
-    user: PropTypes.shape({
+    avatar: PropTypes.string,
+    username: PropTypes.string.isRequired
+  }).isRequired,
+  files: PropTypes.arrayOf(
+    PropTypes.shape({
       id: PropTypes.string.isRequired,
-      avatar: PropTypes.string,
-      username: PropTypes.string.isRequired
-    }).isRequired,
-    files: PropTypes.arrayOf(
-      PropTypes.shape({
+      url: PropTypes.string.isRequired
+    })
+  ).isRequired,
+  likeCount: PropTypes.number.isRequired,
+  isLiked: PropTypes.bool.isRequired,
+  comments: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      text: PropTypes.string.isRequired,
+      user: PropTypes.shape({
         id: PropTypes.string.isRequired,
-        url: PropTypes.string.isRequired
-      })
-    ).isRequired,
-    likeCount: PropTypes.number.isRequired,
-    isLiked: PropTypes.bool.isRequired,
-    comments: PropTypes.arrayOf(
-      PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        text: PropTypes.string.isRequired,
-        user: PropTypes.shape({
-          id: PropTypes.string.isRequired,
-          username: PropTypes.string.isRequired
-        }).isRequired
-      })
-    ).isRequired,
-    caption: PropTypes.string.isRequired,
-    location: PropTypes.string,
-    createdAt: PropTypes.string.isRequired
-  })
-).isRequired;
+        username: PropTypes.string.isRequired
+      }).isRequired
+    })
+  ).isRequired,
+  caption: PropTypes.string.isRequired,
+  location: PropTypes.string,
+  createdAt: PropTypes.string.isRequired
+}).isRequired;
 
 export default Post;

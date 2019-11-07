@@ -34,14 +34,8 @@ const FEED_QUERY = gql`{
   }
 }`;
 
-const View = styled.View`
-    justify-content: center;
-    align-items: center;
-    flex: 1;
-`;
-
 export default () => {
-  const [ refreshing, setRefreshing] = useState(false);
+  const [ refreshing, setRefreshing ] = useState(false);
   const { loading, data, refetch } = useQuery(FEED_QUERY);
   const refresh = async() => {
     try {
@@ -64,7 +58,13 @@ export default () => {
       ) : (
         data &&
         data.seeFeed &&
-        <Post data={data.seeFeed} />
+        <FlatList
+          data={data.seeFeed}
+          keyExtractor={(item) => item.id}
+          renderItem={({item}) => {
+            return <Post item={item} />;
+          }}
+        />
       )}
     </ScrollView>
   );
