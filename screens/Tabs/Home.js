@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ScrollView, RefreshControl } from "react-native";
+import { ScrollView, RefreshControl, FlatList } from "react-native";
 import styled from "styled-components";
 import Loader from "../../components/Loader";
 import Post from "../../components/Post";
@@ -64,7 +64,7 @@ export default () => {
       ) : (
         data &&
         data.seeFeed &&
-        data.seeFeed.map(post => <Post key={post.id} {...post} />)
+        <Post data={data.seeFeed} />
       )}
     </ScrollView>
   );
