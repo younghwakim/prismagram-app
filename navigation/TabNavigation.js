@@ -6,6 +6,7 @@ import Home from "../screens/Tabs/Home";
 import Search from "../screens/Tabs/Search";
 import Notifications from "../screens/Tabs/Notifications";
 import Profile from "../screens/Tabs/Profile";
+import Detail from "../screens/Detail";
 import MessagesLink from "../components/MessagesLink";
 import NavIcon from "../components/NavIcon";
 import { stackStyles } from "./config";
@@ -15,7 +16,8 @@ const stackFactory = (initialRoute, customConfig) =>
     InitialRoute: {
       screen: initialRoute,
       navigationOptions: { ...customConfig, headerStyle: { ...stackStyles }  }
-    }
+    },
+    Detail
   }, {
     headerLayoutPreset: "center"
   });
@@ -38,9 +40,7 @@ export default createBottomTabNavigator(
       }
     },
     Search: {
-      screen: stackFactory(Search, {
-        title: "Search"
-      }),
+      screen: stackFactory(Search),
       navigationOptions: {
         tabBarIcon: ({ focused }) => (
           <NavIcon
@@ -100,6 +100,7 @@ export default createBottomTabNavigator(
     }
   },
   {
+    initialRouteName: "Search",
     tabBarOptions: {
       showLabel: false,
       style: {
