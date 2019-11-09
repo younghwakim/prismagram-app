@@ -9,6 +9,7 @@ import constants from "../constants";
 import { Platform } from "@unimodules/core";
 import styles from "../styles";
 import { useMutation } from "react-apollo-hooks";
+import { withNavigation } from "react-navigation";
 
 const TOGGLE_LIKE = gql`
   mutation toggleLike($postId: String!){
@@ -58,34 +59,54 @@ const CommentCount = styled.Text`
   font-size: 13px;
 `;
 
-const Post = ({ item: { id, user, location, files = [], likeCount: likeCountProp, caption, comments = [], isLiked: isLikedProp }}) => {
-  const [ isLiked, setIsLiked ] = useState(isLikedProp);
-  const [ likeCount, setLikeCount ] = useState(likeCountProp);
+const Post = ({
+  item: {
+    id,
+    user,
+    location,
+    files = [],
+    likeCount: likeCountProp,
+    caption,
+    comments = [],
+    isLiked: isLikedProp,
+  }, navigation
+}) => {
+  const [isLiked, setIsLiked] = useState(isLikedProp);
+  const [likeCount, setLikeCount] = useState(likeCountProp);
   const [toggleLikeMutation] = useMutation(TOGGLE_LIKE, {
     variables: {
       postId: id
     }
   });
-  const handleLike = async() => {
-    if(isLiked) {
-      setLikeCount(l => l-1);
+  const handleLike = async () => {
+    if (isLiked) {
+      setLikeCount(l => l - 1);
     } else {
-      setLikeCount(l => l+1);
+      setLikeCount(l => l + 1);
     }
     setIsLiked(p => !p);
     try {
       await toggleLikeMutation();
-    } catch(e) {
-      
-    }
+    } catch (e) {}
   };
   return (
     <Container>
       <Header>
-        <Touchable>
-          <Image style={{ width: 40, height: 40, borderRadius: 20 }} source={{ uri: user.avatar }} />
+        <Touchable
+          onPress={() =>
+            navigation.navigate("UserDetail", { username: user.username })
+          }
+        >
+          <Image
+            style={{ width: 40, height: 40, borderRadius: 20 }}
+            source={{ uri: user.avatar }}
+          />
         </Touchable>
-        <Touchable>
+        <Touchable
+          onPress={() =>
+            navigation.navigate("UserDetail", { username: user.username })
+          }
+        >
           <HeaderUserContainer>
             <Bold>{user.username}</Bold>
             <Location>{location}</Location>
@@ -93,9 +114,19 @@ const Post = ({ item: { id, user, location, files = [], likeCount: likeCountProp
         </Touchable>
       </Header>
 
-      <Swiper showsPagination={false} loop={false} style={{ width: constants.width, height: constants.height / 2.5 }} dotStyle={{ width: 4, height: 4 }} activeDotStyle={{ width: 4, height: 4 }} >
+      <Swiper
+        showsPagination={false}
+        loop={false}
+        style={{ width: constants.width, height: constants.height / 2.5 }}
+        dotStyle={{ width: 4, height: 4 }}
+        activeDotStyle={{ width: 4, height: 4 }}
+      >
         {files.map(file => (
-          <Image key={file.id} source={{ uri: file.url }} style={{ width: constants.width,  height: constants.height / 2.5 }} />
+          <Image
+            key={file.id}
+            source={{ uri: file.url }}
+            style={{ width: constants.width, height: constants.height / 2.5 }}
+          />
         ))}
       </Swiper>
       <InfoContainer>
@@ -106,9 +137,14 @@ const Post = ({ item: { id, user, location, files = [], likeCount: likeCountProp
                 color={isLiked ? styles.redColor : styles.blackColor}
                 size={28}
                 name={
-                  Platform.OS === "ios" ?
-                    isLiked ? "ios-heart" : "ios-heart-empty"
-                  : isLiked ? "md-heart" : "md-heart-empty" }
+                  Platform.OS === "ios"
+                    ? isLiked
+                      ? "ios-heart"
+                      : "ios-heart-empty"
+                    : isLiked
+                    ? "md-heart"
+                    : "md-heart-empty"
+                }
               />
             </IconContainer>
           </Touchable>
@@ -118,7 +154,7 @@ const Post = ({ item: { id, user, location, files = [], likeCount: likeCountProp
               <Ionicons
                 color={styles.blackColor}
                 size={28}
-                name={ Platform.OS === "ios" ? "ios-text" : "md-text" }
+                name={Platform.OS === "ios" ? "ios-text" : "md-text"}
               />
             </IconContainer>
           </Touchable>
@@ -127,11 +163,11 @@ const Post = ({ item: { id, user, location, files = [], likeCount: likeCountProp
         <Touchable>
           <Bold>{likeCount === 1 ? "1 like" : `${likeCount} likes`}</Bold>
         </Touchable>
-        
+
         <Caption>
           <Bold>{user.username}</Bold> {caption}
         </Caption>
-        
+
         <Touchable>
           <CommentCount>See all {comments.length} comments</CommentCount>
         </Touchable>
@@ -170,4 +206,4 @@ Post.propTypes = PropTypes.shape({
   createdAt: PropTypes.string.isRequired
 }).isRequired;
 
-export default Post;
+export default withNavigation(Post);
